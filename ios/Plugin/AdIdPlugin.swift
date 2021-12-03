@@ -1,5 +1,7 @@
 import Foundation
 import Capacitor
+import AdSupport
+import AppTrackingTransparency
 
 /**
  * Please read the Capacitor iOS Plugin Development Guide
@@ -7,59 +9,47 @@ import Capacitor
  */
 @objc(AdIdPlugin)
 public class AdIdPlugin: CAPPlugin {
-    // private let implementation = AdId()
 
-    @objc func echo(_ call: CAPPluginCall) {
-        // let value = call.getString("value") ?? ""
-        // call.resolve([
-        //     "value": implementation.echo(value)
-        // ])
-        self.requestIDFAPermission(_ call)
+    
+    @objc func getAdId(_ call: CAPPluginCall) {
+        self.requestIDFAPermission(call)
     }
-
-        
-      var idfa: UUID {
+    
+    
+    var idfa: UUID {
         return ASIdentifierManager.shared().advertisingIdentifier
-      }
+    }
     
     
     func requestIDFAPermission(_ call: CAPPluginCall) {
-
         if #available(iOS 14, *) {
             ATTrackingManager.requestTrackingAuthorization { (status) in
                 switch status {
-
+                    
                 case .authorized:
-                    print("Authorized")
-                    print("IDFA: ", self.idfa)
+
                     // completion(self.idfa.uuidString)
                     call.resolve([
-                        "value": self.idfa.uuidString
+                        "id": self.idfa.uuidString
                     ])
-
+                    
                 case .denied, .notDetermined, .restricted:
-                    print("Not Authorized")
-                    print("IDFA: ", self.idfa)
-               
+                    
                     call.resolve([
-                        "value": self.idfa.uuidString
+                        "id": "none"
                     ])
                 @unknown default:
-                    print("UNKNOWN")
-                    print("IDFA: ", self.idfa)
+
                     call.resolve([
-                        "value": self.idfa.uuidString
+                        "id": "none"
                     ])
                 }
             }
         } else {
-            print("Under 14.0")
-            print("IDFA: ", self.idfa)
-
             call.resolve([
-                    "value": self.idfa.uuidString
-            ])                    
+                "id": self.idfa.uuidString
+            ])
         }
     }
-
+    
 }

@@ -1,59 +1,66 @@
 package com.efluvi.capacitoradididfa;
 
+import android.os.AsyncTask;
+import android.os.Build;
+import android.text.TextUtils;
+import android.util.Log;
+
+
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
-import com.google.common.util.concurrent.Futures;
+import com.google.android.gms.ads.identifier.AdvertisingIdClient;
+
 
 @CapacitorPlugin(name = "AdId")
 public class AdIdPlugin extends Plugin {
+    private class GoogleAppIdTask extends AsyncTask<Void, Void, String> {
+        PluginCall call;
 
-    // private AdId implementation = new AdId();
+        public GoogleAppIdTask(PluginCall call) {
+            this.call = call;
+        }
+
+        protected String doInBackground(final Void... params) {
+            try {
+                String adId = AdvertisingIdClient.getAdvertisingIdInfo(getActivity().getApplicationContext()).getId();
+                if (TextUtils.isEmpty(adId)) {
+                    adId = "none";
+                }
+                return adId;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                Log.d("log", "IllegalStateException");
+                return "none";
+            }
+        }
+
+        protected void onPostExecute(String adId) {
+            //작업 수행
+
+            JSObject ret = new JSObject();
+            ret.put("id", adId);
+            call.resolve(ret);
+
+        }
+    }
+
 
     @PluginMethod
-    public void echo(PluginCall call) {
+    public void getAdId(PluginCall call) {
         determineAdvertisingInfo(call);
     }
 
+
     private void determineAdvertisingInfo(PluginCall call) {
-        if (AdvertisingIdClient.isAdvertisingIdProviderAvailable()) {
-            ListenableFuture<AdvertisingIdInfo> advertisingIdInfoListenableFuture = AdvertisingIdClient.getAdvertisingIdInfo(
-                getApplicationContext()
-            );
 
-            Futures.addCallback(
-                advertisingIdInfoListenableFuture,
-                new FutureCallback<AdvertisingIdInfo>() {
-                    @Override
-                    public void onSuccess(AdvertisingIdInfo adInfo) {
-                        String id = adInfo.getId();
-                        String providerPackageName = adInfo.getProviderPackageName();
-                        boolean isLimitTrackingEnabled = adInfo.isLimitTrackingEnabled();
-                        // Any exceptions thrown by getAdvertisingIdInfo()
-                        // cause this method to get called.
-
-                        ret.put("value", id);
-                        call.resolve(ret);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable throwable) {
-                        Log.e("log", "Failed to connect to Advertising ID provider.");
-                        // Try to connect to the Advertising ID provider again,
-                        // or fall back to an ads solution that doesn't require
-                        // using the Advertising ID library.
-                        ret.put("value", 'none');
-                        call.resolve(ret);
-                    }
-                }
-            );
+        GoogleAppIdTask getTask = new GoogleAppIdTask(call);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            getTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         } else {
-            // The Advertising ID client library is unavailable. Use a different
-            // library to perform any required ads use cases.
-            ret.put("value", 'none');
-            call.resolve(ret);
+            getTask.execute();
         }
     }
 }

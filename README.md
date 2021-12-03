@@ -1,6 +1,6 @@
 # capacitor-adid-idfa
 
-get advertise id
+Get advertise id: adid(android), idfa(ios)
 
 ## Install
 
@@ -10,28 +10,26 @@ npx cap sync
 ```
 
 ## API
-
-<docgen-index>
-
-* [`echo(...)`](#echo)
-
-</docgen-index>
-
-<docgen-api>
-<!--Update the source file JSDoc comments and rerun docgen to update the docs below-->
-
-### echo(...)
-
 ```typescript
-echo(options: { value: string; }) => any
+import { AdId } from 'capacitor-adid-idfa';
+
+export class AppComponent {
+  constructor(private platform: Platform){
+    this.platform.ready().then(async () => {
+        const adid = await AdId.getAdId();
+        console.log('adid=', JSON.stringify(adid));
+    })
+  }
+}
+
 ```
 
-| Param         | Type                            |
-| ------------- | ------------------------------- |
-| **`options`** | <code>{ value: string; }</code> |
 
-**Returns:** <code>any</code>
+## Result
+```
+if success
+{id: 'xxxx-xxxx-xxx-xxxxx-xxx'}
 
---------------------
-
-</docgen-api>
+if fail
+{id: 'none'}
+```
